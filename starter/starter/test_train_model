@@ -1,0 +1,115 @@
+'''
+Testing & Logging model.py
+
+author: KJ
+date: September 23, 2026
+'''
+from sklearn.model_selection import train_test_split
+import logging
+import os
+import pandas as pd
+from ml import model as cls
+
+LOGS_DIR = "./starter/logs"
+LOG_FILE = os.path.join(LOGS_DIR, "test_model.log")
+
+logging.basicConfig(
+    filename=LOG_FILE,
+    level=logging.INFO,
+    filemode='w',
+    format='%(name)s - %(levelname)s - %(message)s')
+
+def test_import():
+    """
+    Test data import.
+    
+    input: 
+            import_data - function to test
+
+    output: 
+            None
+
+    """
+    try:
+        df = cls.import_data()
+        assert df.shape[0] > 0
+        assert df.shape[1] > 0
+        logging.info('Testing import_data: SUCCESS')
+
+    except FileNotFoundError as err:
+        logging.error(f'Testing import_data: file not found at {cls.DATA_PATH}')
+        raise err
+    except pd.errors.EmptyDataError as err:
+        logging.error(f'Testing import_data: empty data: {cls.DATA_PATH}')
+        raise err
+    except pd.errors.ParserError as err:
+        logging.error(f'Testing import_data: unable to parse: {cls.DATA_PATH}')
+        raise err
+    except PermissionError as err:
+        logging.error(f'Testing import_data: permission error: {cls.DATA_PATH}')
+        raise err
+    except AssertionError as err:
+        logging.error(f'Testing import_data: No columns or rows: {cls.DATA_PATH}')
+        raise err
+
+
+def test_process_test_train_data():
+    """
+    Test process_test_train_data function of model clas.
+    
+    input: 
+            None
+
+    output: 
+            None
+
+    """
+    try:
+        data = cls.import_data()
+        train, test = train_test_split(data, test_size=0.20)
+        x_train, x_test, y_train, y_test = cls.process_test_train_data(train, test, cls.cat_features)
+        assert x_train.shape[0] > 0 and x_test.shape[0] > 0
+        assert len(x_train) == len(y_train)
+        logging.info("process_test_train_data completed successfully")
+    except Exception as err:
+
+        logging.error("Error in test_process_test_train_data:")
+        raise err
+
+
+def test_model_metrics():
+    """
+    Verifies computed metrics caluclated in 'compute_model_metrics' method in model class.
+    
+    input: 
+            None
+
+    output: 
+            None
+
+    """
+    try:
+        data = cls.import_data()
+        train, test = train_test_split(data, test_size=0.20)
+        cat_features = [
+        "workclass",
+        "education",
+        "marital-status",
+        "occupation",
+        "relationship",
+        "race",
+        "sex",
+        "native-country",
+        ]
+        x_train, x_test, y_train, y_test = cls.process_test_train_data(train, test, cat_features)
+        model = cls.train_model(x_train, y_train)
+        predictions = cls.inference(model, x_test)
+        precision, recall, fbeta = cls.compute_model_metrics(y_test, predictions)
+        assert(precision is not None and precision >= 0 and precision <= 1)
+        assert(recall is not None and recall >= 0 and recall <= 1)
+        assert(fbeta is not None and fbeta >= 0 and fbeta <= 1)
+        logging.info("test_model_metrics completed successfully")
+    except Exception as err:
+    
+            logging.error("Error in test_model_metrics:")
+            raise err
